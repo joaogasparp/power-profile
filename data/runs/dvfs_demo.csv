@@ -1,0 +1,2 @@
+scheduler,total_tasks,completed_tasks,execution_time_ticks,total_energy_J,average_power_W,peak_temp_C
+DVFS-Aware,22,22,5000,13.775490,2.755,34.92

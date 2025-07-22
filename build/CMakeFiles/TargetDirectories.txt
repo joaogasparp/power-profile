@@ -1,0 +1,8 @@
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/powerprofile.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/test.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/edit_cache.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/rebuild_cache.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/list_install_components.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/install.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/install/local.dir
+/home/joaogasparp/Secretária/power-profile/build/CMakeFiles/install/strip.dir
