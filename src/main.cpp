@@ -114,9 +114,7 @@ SimulationStats runSingleSimulation(const SimulationConfig& config, const std::s
     return engine.runSimulation(tasks, config.simulation_duration);
 }
 
-int main(int argc, char* argv[]) {
-    std::cout << "⚡ PowerProfile: Energy-Aware Scheduling Simulator\n" << std::endl;
-    
+int main(int argc, char* argv[]) {    
     SimulationConfig config = parseArguments(argc, argv);
     
     // Check for help

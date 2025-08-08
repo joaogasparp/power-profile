@@ -13,14 +13,14 @@ import time
 from pathlib import Path
 
 class BenchmarkRunner:
-    def __init__(self, powerprofile_binary="./powerprofile"):
+    def __init__(self, powerprofile_binary="./powerprofile", results_dir="results"):
         self.binary = powerprofile_binary
         self.results = []
+        self.results_dir = results_dir
+        os.makedirs(self.results_dir, exist_ok=True)
         
     def run_single_benchmark(self, scheduler, tasks, duration, seed=42):
-        """Run a single benchmark configuration"""
-        output_file = f"benchmark_{scheduler}_{tasks}t_{duration}d_{seed}s.csv"
-        
+        output_file = os.path.join(self.results_dir, f"benchmark_{scheduler}_{tasks}t_{duration}d_{seed}s.csv")
         cmd = [
             self.binary,
             "--scheduler", scheduler,
@@ -29,15 +29,11 @@ class BenchmarkRunner:
             "--seed", str(seed),
             "--output", output_file
         ]
-        
         print(f"Running: {' '.join(cmd)}")
-        
         try:
             start_time = time.time()
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             end_time = time.time()
-            
-            # Read results
             if os.path.exists(output_file):
                 df = pd.read_csv(output_file)
                 if not df.empty:
@@ -48,7 +44,11 @@ class BenchmarkRunner:
                     row['seed_param'] = seed
                     self.results.append(row)
                     print(f"✓ Completed in {end_time - start_time:.2f}s")
-                    os.remove(output_file)  # Clean up individual files
+                    # Move task details file if exists
+                    task_file = output_file.replace('.csv', '_tasks.csv')
+                    if os.path.exists(task_file):
+                        new_task_file = os.path.join(self.results_dir, os.path.basename(task_file))
+                        os.rename(task_file, new_task_file)
                     return True
         except subprocess.CalledProcessError as e:
             print(f"✗ Failed: {e}")
@@ -97,14 +97,18 @@ class BenchmarkRunner:
                 self.run_single_benchmark(scheduler, tasks, duration)
     
     def save_results(self, filename="benchmark_results.csv"):
-        """Save all benchmark results to CSV"""
         if self.results:
+            out_path = os.path.join(self.results_dir, filename)
             df = pd.DataFrame(self.results)
-            df.to_csv(filename, index=False)
-            print(f"Results saved to {filename}")
-            
-            # Generate summary statistics
+            df.to_csv(out_path, index=False)
+            print(f"Results saved to {out_path}")
             self.generate_summary(df)
+            # Generate plots in results_dir
+            try:
+                import scripts.plot_results as plot_mod
+                plot_mod.plot_comparison(df, output_dir=self.results_dir)
+            except Exception:
+                print("(Optional) Could not generate plots automatically.")
             return df
         else:
             print("No results to save")
@@ -151,28 +155,20 @@ class BenchmarkRunner:
 
 def main():
     parser = argparse.ArgumentParser(description='Run PowerProfile benchmarks')
-    parser.add_argument('--binary', '-b', default='./powerprofile', 
-                       help='Path to powerprofile binary')
-    parser.add_argument('--sweep', action='store_true', 
-                       help='Run parameter sweep')
-    parser.add_argument('--scalability', action='store_true', 
-                       help='Run scalability tests')
-    parser.add_argument('--output', '-o', default='benchmark_results.csv',
-                       help='Output CSV file')
+    parser.add_argument('--binary', '-b', default='./powerprofile', help='Path to powerprofile binary')
+    parser.add_argument('--sweep', action='store_true', help='Run parameter sweep')
+    parser.add_argument('--scalability', action='store_true', help='Run scalability tests')
+    parser.add_argument('--output', '-o', default='benchmark_results.csv', help='Output CSV file')
     parser.add_argument('--scheduler', help='Test specific scheduler only')
     parser.add_argument('--tasks', type=int, default=50, help='Number of tasks')
     parser.add_argument('--duration', type=int, default=10000, help='Simulation duration')
-    
+    parser.add_argument('--results-dir', default='results', help='Directory to save results and plots')
     args = parser.parse_args()
-    
-    # Check if binary exists
     if not os.path.exists(args.binary):
         print(f"Error: PowerProfile binary '{args.binary}' not found")
         print("Please build the project first: cmake --build build")
         return 1
-    
-    runner = BenchmarkRunner(args.binary)
-    
+    runner = BenchmarkRunner(args.binary, results_dir=args.results_dir)
     if args.sweep:
         runner.run_parameter_sweep()
     elif args.scalability:
@@ -180,16 +176,13 @@ def main():
     elif args.scheduler:
         runner.run_single_benchmark(args.scheduler, args.tasks, args.duration)
     else:
-        # Run comparison of all schedulers with default parameters
         schedulers = ["RR", "Priority", "FCFS", "DVFS"]
         for scheduler in schedulers:
             runner.run_single_benchmark(scheduler, args.tasks, args.duration)
-    
     df = runner.save_results(args.output)
-    
     if df is not None:
         print(f"\nTo visualize results, run:")
-        print(f"python3 scripts/plot_results.py {args.output}")
+        print(f"python3 scripts/plot_results.py {os.path.join(args.results_dir, args.output)}")
 
 if __name__ == "__main__":
     exit(main())

@@ -1,5 +1,0 @@
-scheduler,total_tasks,completed_tasks,execution_time_ticks,total_energy_J,average_power_W,peak_temp_C
-Round-Robin,28,28,10000,13.378608,1.338,28.34
-Priority-Based,40,40,10000,13.162608,1.316,28.46
-First-Come-First-Serve,41,41,10000,13.938480,1.394,28.46
-DVFS-Aware,41,41,10000,27.359317,2.736,34.92
